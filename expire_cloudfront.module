@@ -24,6 +24,7 @@ function expire_cloudfront_expire_cache($urls, $wildcards, $object_type, $object
     // CloudFront only valid in us-east-1 region.
     'region' => 'us-east-1',
     'version' => 'latest',
+    'profile' => variable_get('expire_cloudfront_profile', 'default')
   ]);
 
   $distribution_id = variable_get('expire_cloudfront_distribution_id');
