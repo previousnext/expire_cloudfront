@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Expire CloudFront module.
+ */
+
+use Aws\Exception\AwsException;
+use Aws\Sdk;
+
+/**
+ * Implements hook_expire_cache().
+ */
+function expire_cloudfront_expire_cache($urls, $wildcards, $object_type, $object) {
+  // We only need the URL.
+  $flush_urls = array_keys($urls);
+  // Everything needs a starting slash.
+  array_walk($flush_urls, function (&$url) {
+    $url = '/' . $url;
+  });
+
+  watchdog('expire_cloudfront', 'Flushing URLS: ' . implode(',', $flush_urls), WATCHDOG_INFO);
+  $sdk = new Sdk([
+    // CloudFront only valid in us-east-1 region.
+    'region' => 'us-east-1',
+    'version' => 'latest',
+  ]);
+
+  $distribution_id = variable_get('expire_cloudfront_distribution_id');
+
+  try {
+    // Credentials are set in environment variables.
+    $client = $sdk->createCloudFront();
+    $client->createInvalidation([
+      'DistributionId' => $distribution_id,
+      'InvalidationBatch' => [
+        'CallerReference' => time(),
+        'Paths' => [
+          'Items' => $flush_urls,
+          'Quantity' => count($flush_urls),
+        ],
+      ],
+    ]);
+    watchdog('expire_cloudfront', 'Successfully flushed URLS: ' . implode(',', $flush_urls), WATCHDOG_INFO);
+  }
+  catch (AwsException $e) {
+    watchdog_exception('expire_cloudfront', $e, 'Error flushing CloudFront cache. %type: !message in %function (line %line of %file).');
+  }
+}
