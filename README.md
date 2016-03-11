@@ -1,7 +1,11 @@
 # Expire CloudFront
 
 This module is an [Cache Expiration](https://www.drupal.org/project/expire) plugin for AWS CloudWatch.
-  
+
+**Note** It can take 10-15 minutes to process invalidation requests. See the [Invalidation Limits](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html#InvalidationLimits) documentation for details.
+
+> It usually takes 10 to 15 minutes for CloudFront to complete your invalidation request, depending on the number of invalidation paths that you included in the request.
+
 ## Installation
 
 This module requires you to have the AWS SDK loaded in your classpath.
