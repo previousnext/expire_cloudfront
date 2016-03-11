@@ -19,15 +19,24 @@ function expire_cloudfront_expire_cache($urls, $wildcards, $object_type, $object
     $url = '/' . $url;
   });
 
-  watchdog('expire_cloudfront', 'Flushing URLS: ' . implode(',', $flush_urls), WATCHDOG_INFO);
-  $sdk = new Sdk([
+  watchdog('expire_cloudfront', 'Flushing URLS: %urls', ['%urls' => implode(', ', $flush_urls)]);
+
+  $settings = [
     // CloudFront only valid in us-east-1 region.
     'region' => 'us-east-1',
     'version' => 'latest',
-    'profile' => variable_get('expire_cloudfront_profile', 'default')
-  ]);
+  ];
+  $profile = variable_get('expire_cloudfront_profile');
+  if (isset($profile)) {
+    $settings['profile'] = $profile;
+  }
+  $sdk = new Sdk($settings);
 
   $distribution_id = variable_get('expire_cloudfront_distribution_id');
+  if (!isset($distribution_id)) {
+    watchdog('expire_cloudfront', 'expire_cloudfront_distribution_id variable must be set');
+    return;
+  }
 
   try {
     // Credentials are set in environment variables.
@@ -42,7 +51,7 @@ function expire_cloudfront_expire_cache($urls, $wildcards, $object_type, $object
         ],
       ],
     ]);
-    watchdog('expire_cloudfront', 'Successfully flushed URLS: ' . implode(',', $flush_urls), WATCHDOG_INFO);
+    watchdog('expire_cloudfront', 'Successfully flushed URLS: !urls', ['!urls' => implode(', ', $flush_urls)]);
   }
   catch (AwsException $e) {
     watchdog_exception('expire_cloudfront', $e, 'Error flushing CloudFront cache. %type: !message in %function (line %line of %file).');
